@@ -2,6 +2,10 @@ from doctest import master
 from tkinter import *
 from tkinter import Tk, Label, Button,ttk
 from typing import List
+import socket
+from Crypto.PublicKey import RSA
+import os
+
 
 class User:
     def __init__(self, name:str):
@@ -55,11 +59,34 @@ class ActionWindow:
         self.label.pack()
         Button(self.master, text="Open", command=self.napisz).pack()
 
-root = Tk()
-root.geometry('852x480')
-userHandler = UserHandler()
-for i in range (5):
-    userHandler.addUser(User(str(i)))
-my_gui = ViewHandler(root)
-my_gui.addLabels(userHandler.listOfUsers)
-root.mainloop()
+def GenerateRSAKeys():
+
+    key = RSA.generate(2048)
+    private_key = key.export_key()
+    public_key = key.publickey().export_key()
+
+    os.mkdir("RSApriv")
+    file_out = open("RSApriv/private.pem", "wb")
+    file_out.write(private_key)
+    file_out.close()
+
+    os.mkdir("RSApub")
+    file_out = open("RSApub/public.pem", "wb")
+    file_out.write(public_key)
+    file_out.close()
+
+def main():
+    if not(os.path.exists('RSApriv')):
+        GenerateRSAKeys()
+    root = Tk()
+    root.geometry('852x480')
+    userHandler = UserHandler()
+    for i in range (5):
+        userHandler.addUser(User(str(i)))
+    my_gui = ViewHandler(root)
+    my_gui.addLabels(userHandler.listOfUsers)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
