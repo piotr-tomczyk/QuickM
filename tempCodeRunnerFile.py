@@ -1,1 +1,1 @@
-, tag 
+    my_string_var.set("nie dziala")

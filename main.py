@@ -9,7 +9,10 @@ from Crypto.Random import get_random_bytes
 from Crypto.Cipher import AES, PKCS1_OAEP
 import os
 from Crypto.Util.Padding import pad,unpad
+import customtkinter
 
+customtkinter.set_appearance_mode("gray")
+customtkinter.set_default_color_theme("green") 
 
 class User:
     def __init__(self, name:str):
@@ -29,10 +32,10 @@ class ViewHandler:
 
     def addLabels(self, userlist):
         for user in userlist:
-            self.label = Label(self.master, text=user.name)
+            self.label = customtkinter.CTkLabel(self.master, text=user.name)
             self.label.pack()
             
-            self.greet_button = Button(self.master, text="Greet", command=lambda user = user: self.greet(user))
+            self.greet_button = customtkinter.CTkButton(self.master, text="Greet", command=lambda user = user: self.greet(user))
             self.greet_button.pack()
 
         #ttk.Button(self.master, text="Open", command=self.open_win).pack()
@@ -45,7 +48,7 @@ class ViewHandler:
 
     def open_win(self):
         self.master.destroy()
-        self.master = Tk()
+        self.master = customtkinter.CTk()
         self.master.geometry("852x480")
     
 
@@ -59,7 +62,7 @@ class ActionWindow:
         print("XD")
 
     def addLabels(self):
-        self.label = Label(self.master, text=self.user.name)
+        self.label = customtkinter.CTkLabel(self.master, text=self.user.name)
         self.label.pack()
         Button(self.master, text="Open", command=self.napisz).pack()
 
@@ -164,16 +167,16 @@ def detest():
 def main():
     # if not(os.path.exists('RSApriv')):
     #     GenerateRSAKeys()
-    # root = Tk()
-    # root.geometry('852x480')
-    # userHandler = UserHandler()
-    # for i in range (5):
-    #     userHandler.addUser(User(str(i)))
-    # my_gui = ViewHandler(root)
-    # my_gui.addLabels(userHandler.listOfUsers)
-    # root.mainloop()
-    Test()
-    detest()
+    root = customtkinter.CTk()
+    root.geometry('852x480')
+    userHandler = UserHandler()
+    for i in range (5):
+        userHandler.addUser(User(str(i)))
+    my_gui = ViewHandler(root)
+    my_gui.addLabels(userHandler.listOfUsers)
+    root.mainloop()
+    # Test()
+    # detest()
 
 
 if __name__ == "__main__":
