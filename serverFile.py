@@ -2,8 +2,44 @@ import sys
 import socket
 import selectors
 import types
+from Crypto.PublicKey import RSA
+from Crypto.Random import get_random_bytes
+from Crypto.Cipher import AES, PKCS1_OAEP
+import os
+from Crypto.Util.Padding import pad, unpad
+import customtkinter
+import serverFile
+from client import clientFNC
+import multiprocessing
+from time import sleep
 
 sel = selectors.DefaultSelector()
+
+
+def DecipherMessageWithECB(data):
+    # dataStr = data.decode()
+    file_out = open("encrypted_data.bin", "wb")
+    file_out.write(data)
+    file_out.close()
+    file_in = open("encrypted_data.bin", "rb")
+
+    private_key = RSA.import_key(open("RSApriv/private.pem").read())
+
+    enc_session_key, ciphertext = [
+        file_in.read(x) for x in (private_key.size_in_bytes(), -1)
+    ]
+
+    file_in.close()
+    os.remove("encrypted_data.bin")
+    
+    # Decrypt the session key with the private RSA key
+    cipher_rsa = PKCS1_OAEP.new(private_key)
+    session_key = cipher_rsa.decrypt(enc_session_key)
+
+    # Decrypt the data with the AES session key
+    cipher_aes = AES.new(session_key, AES.MODE_ECB)
+    data = cipher_aes.decrypt(ciphertext)
+    print(unpad(data,AES.block_size).decode())
 
 
 def accept_wrapper(sock):
@@ -28,6 +64,9 @@ def service_connection(key, mask):
             sock.close()
     if mask & selectors.EVENT_WRITE:
         if data.outb:
+
+            DecipherMessageWithECB(data.outb)
+
             print(f"Echoing {data.outb!r} to {data.addr}")
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]

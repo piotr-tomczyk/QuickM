@@ -81,7 +81,7 @@ class ServerWindow:
             ),
         )
         serverThread.start()
-        sleep(5)
+        sleep(500)
         serverThread.terminate()
 
     def on_closing(self):
@@ -127,16 +127,17 @@ class ClientWindow:
         send_button.pack(pady=18)
 
     def clientInit(self):
+        data = CipherMessageWithECB(self.message_entry.get())
         clientThread = multiprocessing.Process(
             target=clientFNC,
             args=(
                 self.ip_entry.get(),
                 int(self.port_entry.get()),
-                self.message_entry.get(),
+                data,
             ),
         )
         clientThread.start()
-        sleep(5)
+        sleep(500)
         clientThread.terminate()
         
     def on_closing(self):
@@ -165,9 +166,9 @@ def GenerateRSAKeys():
 #   return message
 
 
-def CipherMessageWithECB():
-    data = "I met aliens in UFO. Here is the map."
-    data = pad(data.encode("utf-8"), AES.block_size)
+def CipherMessageWithECB(data):
+    # data = "I met aliens in UFO. Here is the map."
+    data = pad(data.encode(), AES.block_size)
     file_out = open("encrypted_data.bin", "wb")
 
     recipient_key = RSA.import_key(open("RSApub/public.pem").read())
@@ -180,8 +181,12 @@ def CipherMessageWithECB():
     # Encrypt the data with the AES session key
     cipher_aes = AES.new(session_key, AES.MODE_ECB)
     ciphertext = cipher_aes.encrypt(data)
+
+    text = enc_session_key + ciphertext
     [file_out.write(x) for x in (enc_session_key, ciphertext)]
     file_out.close()
+    
+    return text
 
 
 def DecipherMessageWithECB():
@@ -252,8 +257,8 @@ def detest():
 
 
 def main():
-    # if not(os.path.exists('RSApriv')):
-    #     GenerateRSAKeys()
+    if not(os.path.exists('RSApriv')):
+        GenerateRSAKeys()
     # Test()
     # detest()
     root = customtkinter.CTk()
