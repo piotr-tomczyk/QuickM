@@ -84,7 +84,7 @@ class ServerWindow:
             ),
         )
         clientThread.start()
-        sleep(500)
+        sleep(5)
         clientThread.terminate()
         
         serverThread = multiprocessing.Process(
@@ -95,7 +95,7 @@ class ServerWindow:
             ),
         )
         serverThread.start()
-        sleep(500)
+        sleep(5)
         serverThread.terminate()
 
     def on_closing(self):
@@ -149,9 +149,9 @@ class ClientWindow:
             ),
         )
         serverThread.start()
-        sleep(500)
+        sleep(5)
         serverThread.terminate()
-
+        sleep(2)
 
         data = CipherMessageWithECB(self.message_entry.get())
         clientThread = multiprocessing.Process(
@@ -164,7 +164,7 @@ class ClientWindow:
             ),
         )
         clientThread.start()
-        sleep(500)
+        sleep(5)
         clientThread.terminate()
         
     def on_closing(self):
@@ -193,7 +193,7 @@ def GenerateRSAKeys():
 #   return message
 
 def GetPublicKey():
-    return str(RSA.import_key(open("RSApub/public.pem").read())).encode()
+    return str(open("RSApub/public.pem").read()).encode()
 
 def CipherMessageWithECB(data):
     # data = "I met aliens in UFO. Here is the map."
