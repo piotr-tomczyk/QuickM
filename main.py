@@ -73,6 +73,20 @@ class ServerWindow:
         server_button.pack(pady=18)
 
     def serverInit(self):
+        data = GetPublicKey()
+        clientThread = multiprocessing.Process(
+            target=clientFNC,
+            args=(
+                self.ip_entry.get(),
+                int(self.port_entry.get()),
+                data,
+                "key".encode()
+            ),
+        )
+        clientThread.start()
+        sleep(500)
+        clientThread.terminate()
+        
         serverThread = multiprocessing.Process(
             target=serverFile.serverStart,
             args=(
@@ -127,6 +141,18 @@ class ClientWindow:
         send_button.pack(pady=18)
 
     def clientInit(self):
+        serverThread = multiprocessing.Process(
+            target=serverFile.serverStart,
+            args=(
+                self.ip_entry.get(),
+                int(self.port_entry.get()),
+            ),
+        )
+        serverThread.start()
+        sleep(500)
+        serverThread.terminate()
+
+
         data = CipherMessageWithECB(self.message_entry.get())
         clientThread = multiprocessing.Process(
             target=clientFNC,
@@ -134,6 +160,7 @@ class ClientWindow:
                 self.ip_entry.get(),
                 int(self.port_entry.get()),
                 data,
+                "message".encode()
             ),
         )
         clientThread.start()
@@ -165,13 +192,15 @@ def GenerateRSAKeys():
 #     message = message + " "
 #   return message
 
+def GetPublicKey():
+    return str(RSA.import_key(open("RSApub/public.pem").read())).encode()
 
 def CipherMessageWithECB(data):
     # data = "I met aliens in UFO. Here is the map."
     data = pad(data.encode(), AES.block_size)
     file_out = open("encrypted_data.bin", "wb")
 
-    recipient_key = RSA.import_key(open("RSApub/public.pem").read())
+    recipient_key = RSA.import_key(open("public_rec.pem").read())
     session_key = get_random_bytes(16)
 
     # Encrypt the session key with the public RSA key

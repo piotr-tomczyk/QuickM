@@ -15,6 +15,12 @@ from time import sleep
 
 sel = selectors.DefaultSelector()
 
+type = ""
+
+def GetPublicKey(data):
+    file_out = open("public_rec.pem", "wb")
+    file_out.write(data.decode())
+    file_out.close()
 
 def DecipherMessageWithECB(data):
     # dataStr = data.decode()
@@ -52,6 +58,7 @@ def accept_wrapper(sock):
 
 
 def service_connection(key, mask):
+    global type
     sock = key.fileobj
     data = key.data
     if mask & selectors.EVENT_READ:
@@ -64,10 +71,19 @@ def service_connection(key, mask):
             sock.close()
     if mask & selectors.EVENT_WRITE:
         if data.outb:
+            print(f"Echoing {data.outb!r} to {data.addr}\n")
+            dataDecrypted = data.outb.decode()
+            if type == "key":
+                GetPublicKey(data.outb)
+            if type == "message":
+                DecipherMessageWithECB(data.outb)
+            if dataDecrypted == "key":
+                type = "key"
+            if dataDecrypted == "message":
+                type = "message"
+        
 
-            DecipherMessageWithECB(data.outb)
-
-            print(f"Echoing {data.outb!r} to {data.addr}")
+            # print(f"Echoing {data.outb!r} to {data.addr}")
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
 
