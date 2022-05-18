@@ -5,15 +5,18 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES, PKCS1_OAEP
 import os
 from Crypto.Util.Padding import unpad
+import messagePopUp
 
 sel = selectors.DefaultSelector()
 
 type = ""
 
+
 def GetPublicKey(data):
     file_out = open("public_rec.pem", "w")
     file_out.write(data.decode())
     file_out.close()
+
 
 def DecipherMessageWithECB(data):
     file_out = open("encrypted_data.bin", "wb")
@@ -29,13 +32,15 @@ def DecipherMessageWithECB(data):
 
     file_in.close()
     os.remove("encrypted_data.bin")
-    
+
     cipher_rsa = PKCS1_OAEP.new(private_key)
     session_key = cipher_rsa.decrypt(enc_session_key)
 
     cipher_aes = AES.new(session_key, AES.MODE_ECB)
     data = cipher_aes.decrypt(ciphertext)
-    print(unpad(data,AES.block_size).decode())
+    message = unpad(data, AES.block_size).decode()
+    print(message)
+    messagePopUp.start(message)
 
 
 def accept_wrapper(sock):
@@ -71,7 +76,6 @@ def service_connection(key, mask):
                     type = "message"
                 if data.outb.decode() == "key":
                     type = "key"
-        
 
             sent = sock.send(data.outb)
             data.outb = data.outb[sent:]
