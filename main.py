@@ -8,6 +8,7 @@ from Crypto.Util.Padding import pad
 import customtkinter
 from time import sleep
 import multiprocessing
+from tkinter.filedialog import askopenfilename
 
 from client import clientFNC
 import serverFile
@@ -220,11 +221,21 @@ class ClientFileWindow:
                                corner_radius=10)
         self.port_entry.pack(pady=18)
 
-        self.message_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Plik:")
-        self.message_label.pack()
+        self.message_label_1 = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Plik:")
+        self.message_label_1.pack()
         
-        self.message_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="WYBÓR PLIKU")
-        self.message_label.pack()
+        self.message_label_2 = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="WYBÓR PLIKU")
+        self.message_label_2.pack()
+
+        self.filename = ""
+
+        self.choose_button = customtkinter.CTkButton(
+            self.master, text="Wybierz Plik", command=self.chooseFile
+        )
+        self.choose_button.pack(pady=18)
+
+        self.message_file_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="WYBRANY PLIK: " + self.filename)
+        self.message_file_label.pack()
 
         self.is_ecb = tkinter.IntVar(self.master, 0)
 
@@ -257,10 +268,10 @@ class ClientFileWindow:
         sleep(2)
         messageType = "fileECB"
         if self.is_ecb.get() == 0:
-            data = CipherMessageWithECB("tu_bedzie_plik")
+            data = CipherMessageWithECB(self.filename)
             messageType = "fileECB"
         if self.is_ecb.get() == 1:
-            data = CipherMessageWithCBC("tu_bedzie_plik")
+            data = CipherMessageWithCBC(self.filename)
             messageType = "fileCBC"
         clientThread = multiprocessing.Process(
             target=clientFNC,
@@ -274,7 +285,13 @@ class ClientFileWindow:
         clientThread.start()
         sleep(5)
         clientThread.terminate()
-        
+    
+    def chooseFile(self):
+        self.filename = askopenfilename()
+        print(self.filename)
+        self.message_file_label["text"] = "WYBRANY PLIK: "+ self.filename
+        return 
+
     def on_closing(self):
         self.oldWindow.destroy()
 

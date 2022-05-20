@@ -18,6 +18,6 @@ class ViewHandler:
 
 def start(message):
     root = customtkinter.CTk()
-    root.geometry("200x120")
+    root.geometry("400x240")
     my_gui = ViewHandler(root, message)
     root.mainloop()
