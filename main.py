@@ -31,12 +31,19 @@ class ViewHandler:
         )
         client_button.pack(pady=18)
 
+        client_file_button = customtkinter.CTkButton(
+            self.master, text="Wyśij plik", command=self.open_client_file
+        )
+        client_file_button.pack(pady=18)
+
     def open_server(self):
         action = ServerWindow(self.open_win())
     
     def open_client(self):
         action = ClientWindow(self.open_win())
 
+    def open_client_file(self):
+        action = ClientFileWindow(self.open_win())
     def open_win(self):
         new_window = customtkinter.CTkToplevel(self.master)
         new_window.geometry("852x480")
@@ -172,6 +179,89 @@ class ClientWindow:
         if self.is_ecb.get() == 1:
             data = CipherMessageWithCBC(self.message_entry.get())
             messageType = "messageCBC"
+        clientThread = multiprocessing.Process(
+            target=clientFNC,
+            args=(
+                self.ip_entry.get(),
+                int(self.port_entry.get()),
+                data,
+                messageType.encode()
+            ),
+        )
+        clientThread.start()
+        sleep(5)
+        clientThread.terminate()
+        
+    def on_closing(self):
+        self.oldWindow.destroy()
+
+class ClientFileWindow:
+    def __init__(self, master):
+        self.oldWindow = master[1]
+        self.master = master[0]
+        self.master.title("QuickM - file_client")
+        self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.menuButtons()
+
+    def menuButtons(self):
+        self.ip_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="IP:")
+        self.ip_label.pack(pady=18)
+        self.ip_entry = customtkinter.CTkEntry(master=self.master,
+                               width=120,
+                               height=25,
+                               corner_radius=10)
+        self.ip_entry.insert(-1, '127.0.0.1')
+        self.ip_entry.pack(pady=18)
+        self.port_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Port:")
+        self.port_label.pack()
+        self.port_entry = customtkinter.CTkEntry(master=self.master,
+                               width=120,
+                               height=25,
+                               corner_radius=10)
+        self.port_entry.pack(pady=18)
+
+        self.message_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Plik:")
+        self.message_label.pack()
+        
+        self.message_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="WYBÓR PLIKU")
+        self.message_label.pack()
+
+        self.is_ecb = tkinter.IntVar(self.master, 0)
+
+        self.ecb_button = customtkinter.CTkRadioButton(master=self.master, text="ECB",variable= self.is_ecb, value=0);
+        self.ecb_button.pack()
+
+        self.ecb_button = customtkinter.CTkRadioButton(master=self.master, text="CBC",variable= self.is_ecb, value=1);
+        self.ecb_button.pack()
+
+        self.send_button = customtkinter.CTkButton(
+            self.master, text="Wyślij plik", command=self.clientInit
+        )
+        self.send_button.pack(pady=18)
+
+    def clientInit(self):
+        if self.is_ecb.get() == 0:
+            print("selected ECB")
+        if self.is_ecb.get() == 1:
+            print("selected: CBC")
+        serverThread = multiprocessing.Process(
+            target=serverFile.serverStart,
+            args=(
+                self.ip_entry.get(),
+                int(self.port_entry.get()),
+            ),
+        )
+        serverThread.start()
+        sleep(5)
+        serverThread.terminate()
+        sleep(2)
+        messageType = "fileECB"
+        if self.is_ecb.get() == 0:
+            data = CipherMessageWithECB("tu_bedzie_plik")
+            messageType = "fileECB"
+        if self.is_ecb.get() == 1:
+            data = CipherMessageWithCBC("tu_bedzie_plik")
+            messageType = "fileCBC"
         clientThread = multiprocessing.Process(
             target=clientFNC,
             args=(

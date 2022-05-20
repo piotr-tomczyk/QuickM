@@ -70,6 +70,7 @@ def DecipherMessageWithCBC(data):
     messagePopUp.start(message)
     return
 
+
 def accept_wrapper(sock):
     conn, addr = sock.accept()
     print(f"Accepted connection from {addr}")
@@ -99,12 +100,20 @@ def service_connection(key, mask):
             if type == "messageECB":
                 DecipherMessageWithECB(data.outb)
             if type == "messageCBC":
+                DecipherMessageWithCBC(data.outb)
+            if type == "fileECB":
+                DecipherMessageWithECB(data.outb)
+            if type == "fileCBC":
                 DecipherMessageWithCBC(data.outb)   
             if type == "":
                 if data.outb.decode() == "messageCBC":
                     type = "messageCBC"
                 if data.outb.decode() == "messageECB":
                     type = "messageECB"
+                if data.outb.decode() == "fileCBC":
+                    type = "fileCBC"
+                if data.outb.decode() == "fileECB":
+                    type = "fileECB"
                 if data.outb.decode() == "key":
                     type = "key"
 
