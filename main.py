@@ -1,4 +1,5 @@
 from tkinter import *
+import tkinter
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
 from Crypto.Cipher import AES, PKCS1_OAEP
@@ -135,12 +136,24 @@ class ClientWindow:
                                corner_radius=10)
         self.message_entry.pack(pady=18)
 
-        send_button = customtkinter.CTkButton(
+        self.is_ecb = tkinter.IntVar(self.master, 0)
+
+        self.ecb_button = customtkinter.CTkRadioButton(master=self.master, text="ECB",variable= self.is_ecb, value=0);
+        self.ecb_button.pack()
+
+        self.ecb_button = customtkinter.CTkRadioButton(master=self.master, text="CBC",variable= self.is_ecb, value=1);
+        self.ecb_button.pack()
+
+        self.send_button = customtkinter.CTkButton(
             self.master, text="Wyślij wiadomość", command=self.clientInit
         )
-        send_button.pack(pady=18)
+        self.send_button.pack(pady=18)
 
     def clientInit(self):
+        if self.is_ecb.get() == 0:
+            print("selected ECB")
+        if self.is_ecb.get() == 1:
+            print("selected: CBC")
         serverThread = multiprocessing.Process(
             target=serverFile.serverStart,
             args=(
@@ -152,15 +165,20 @@ class ClientWindow:
         sleep(5)
         serverThread.terminate()
         sleep(2)
-
-        data = CipherMessageWithECB(self.message_entry.get())
+        messageType = "messageECB"
+        if self.is_ecb.get() == 0:
+            data = CipherMessageWithECB(self.message_entry.get())
+            messageType = "messageECB"
+        if self.is_ecb.get() == 1:
+            data = CipherMessageWithCBC(self.message_entry.get())
+            messageType = "messageCBC"
         clientThread = multiprocessing.Process(
             target=clientFNC,
             args=(
                 self.ip_entry.get(),
                 int(self.port_entry.get()),
                 data,
-                "message".encode()
+                messageType.encode()
             ),
         )
         clientThread.start()
@@ -169,7 +187,7 @@ class ClientWindow:
         
     def on_closing(self):
         self.oldWindow.destroy()
-    
+
 def GenerateRSAKeys():
 
     key = RSA.generate(2048)
@@ -190,6 +208,26 @@ def GetPublicKey():
     return str(open("RSApub/public.pem").read()).encode()
 
 def CipherMessageWithECB(data):
+    data = pad(data.encode(), AES.block_size)
+    file_out = open("encrypted_data.bin", "wb")
+
+    recipient_key = RSA.import_key(open("public_rec.pem").read())
+    session_key = get_random_bytes(16)
+
+    cipher_rsa = PKCS1_OAEP.new(recipient_key)
+    enc_session_key = cipher_rsa.encrypt(session_key)
+
+    cipher_aes = AES.new(session_key, AES.MODE_ECB)
+    ciphertext = cipher_aes.encrypt(data)
+
+    text = enc_session_key + ciphertext
+    [file_out.write(x) for x in (enc_session_key, ciphertext)]
+    file_out.close()
+    
+    return text
+
+def CipherMessageWithCBC(data):
+    #CBC CODE
     data = pad(data.encode(), AES.block_size)
     file_out = open("encrypted_data.bin", "wb")
 

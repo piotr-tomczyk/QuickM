@@ -19,6 +19,7 @@ def GetPublicKey(data):
 
 
 def DecipherMessageWithECB(data):
+    print("ECB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     file_out = open("encrypted_data.bin", "wb")
     file_out.write(data)
     file_out.close()
@@ -41,7 +42,33 @@ def DecipherMessageWithECB(data):
     message = unpad(data, AES.block_size).decode()
     print(message)
     messagePopUp.start(message)
+    return
+def DecipherMessageWithCBC(data):
+    ##CBC implementation
+    print("CBC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    file_out = open("encrypted_data.bin", "wb")
+    file_out.write(data)
+    file_out.close()
+    file_in = open("encrypted_data.bin", "rb")
 
+    private_key = RSA.import_key(open("RSApriv/private.pem").read())
+
+    enc_session_key, ciphertext = [
+        file_in.read(x) for x in (private_key.size_in_bytes(), -1)
+    ]
+
+    file_in.close()
+    os.remove("encrypted_data.bin")
+
+    cipher_rsa = PKCS1_OAEP.new(private_key)
+    session_key = cipher_rsa.decrypt(enc_session_key)
+
+    cipher_aes = AES.new(session_key, AES.MODE_ECB)
+    data = cipher_aes.decrypt(ciphertext)
+    message = unpad(data, AES.block_size).decode()
+    print(message)
+    messagePopUp.start(message)
+    return
 
 def accept_wrapper(sock):
     conn, addr = sock.accept()
@@ -69,11 +96,15 @@ def service_connection(key, mask):
             print(f"Echoing {data.outb!r} to {data.addr}\n")
             if type == "key":
                 GetPublicKey(data.outb)
-            if type == "message":
+            if type == "messageECB":
                 DecipherMessageWithECB(data.outb)
+            if type == "messageCBC":
+                DecipherMessageWithCBC(data.outb)   
             if type == "":
-                if data.outb.decode() == "message":
-                    type = "message"
+                if data.outb.decode() == "messageCBC":
+                    type = "messageCBC"
+                if data.outb.decode() == "messageECB":
+                    type = "messageECB"
                 if data.outb.decode() == "key":
                     type = "key"
 
