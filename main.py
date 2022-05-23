@@ -74,6 +74,7 @@ class ServerWindow:
                                width=120,
                                height=25,
                                corner_radius=10)
+        self.port_entry.insert(-1, '5000')
         self.port_entry.pack(pady=18)
 
         server_button = customtkinter.CTkButton(
@@ -133,6 +134,7 @@ class ClientWindow:
                                width=120,
                                height=25,
                                corner_radius=10)
+        self.port_entry.insert(-1, '5000')
         self.port_entry.pack(pady=18)
 
         self.message_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Message:")
@@ -219,6 +221,7 @@ class ClientFileWindow:
                                width=120,
                                height=25,
                                corner_radius=10)
+        self.port_entry.insert(-1, '5000')                       
         self.port_entry.pack(pady=18)
 
         self.message_label_1 = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Plik:")
