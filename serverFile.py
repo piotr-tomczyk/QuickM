@@ -6,6 +6,7 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 import os
 from Crypto.Util.Padding import unpad
 import messagePopUp
+from tqdm import tqdm
 
 sel = selectors.DefaultSelector()
 
@@ -43,6 +44,8 @@ def DecipherMessageWithECB(data):
     print(message)
     messagePopUp.start(message)
     return
+
+
 def DecipherMessageWithCBC(data):
     ##CBC implementation
     print("CBC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
@@ -71,6 +74,60 @@ def DecipherMessageWithCBC(data):
     return
 
 
+def DecipherFileWithECB(data):
+    print("ECB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    file_out = open("encrypted_data.bin", "wb")
+    file_out.write(data)
+    file_out.close()
+    file_in = open("encrypted_data.bin", "rb")
+
+    private_key = RSA.import_key(open("RSApriv/private.pem").read())
+
+    enc_session_key, ciphertext = [
+        file_in.read(x) for x in (private_key.size_in_bytes(), -1)
+    ]
+
+    file_in.close()
+    os.remove("encrypted_data.bin")
+
+    cipher_rsa = PKCS1_OAEP.new(private_key)
+    session_key = cipher_rsa.decrypt(enc_session_key)
+
+    cipher_aes = AES.new(session_key, AES.MODE_ECB)
+    data = cipher_aes.decrypt(ciphertext)
+    # AES.block_size
+    message = unpad(data, AES.block_size).decode()
+
+    return message
+
+
+def DecipherFileWithCBC(data):
+    ##CBC implementation
+    print("CBC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    file_out = open("encrypted_data.bin", "wb")
+    file_out.write(data)
+    file_out.close()
+    file_in = open("encrypted_data.bin", "rb")
+
+    private_key = RSA.import_key(open("RSApriv/private.pem").read())
+
+    enc_session_key, ciphertext = [
+        file_in.read(x) for x in (private_key.size_in_bytes(), -1)
+    ]
+
+    file_in.close()
+    os.remove("encrypted_data.bin")
+
+    cipher_rsa = PKCS1_OAEP.new(private_key)
+    session_key = cipher_rsa.decrypt(enc_session_key)
+
+    cipher_aes = AES.new(session_key[0:16], AES.MODE_CBC, session_key[16:32])
+    data = cipher_aes.decrypt(ciphertext)
+    message = unpad(data, AES.block_size).decode()
+
+    return message
+
+
 def accept_wrapper(sock):
     conn, addr = sock.accept()
     print(f"Accepted connection from {addr}")
@@ -80,7 +137,7 @@ def accept_wrapper(sock):
     sel.register(conn, events, data=data)
 
 
-def service_connection(key, mask):
+def service_connection(key, mask, host, port, lsock, sel):
     global type
     sock = key.fileobj
     data = key.data
@@ -98,13 +155,9 @@ def service_connection(key, mask):
             if type == "key":
                 GetPublicKey(data.outb)
             if type == "messageECB":
-                DecipherMessageWithECB(data.outb)
+                DecipherMessageWithECB(data)
             if type == "messageCBC":
-                DecipherMessageWithCBC(data.outb)
-            if type == "fileECB":
-                DecipherMessageWithECB(data.outb)
-            if type == "fileCBC":
-                DecipherMessageWithCBC(data.outb)   
+                DecipherMessageWithCBC(data)
             if type == "":
                 if data.outb.decode() == "messageCBC":
                     type = "messageCBC"
@@ -112,20 +165,26 @@ def service_connection(key, mask):
                     type = "messageECB"
                 if data.outb.decode() == "fileCBC":
                     type = "fileCBC"
+                    lsock.close()
+                    sel.close()
+                    saveCBCFile(data.outb, host, port, sock)
                 if data.outb.decode() == "fileECB":
                     type = "fileECB"
+                    lsock.close()
+                    sel.close()
+                    saveECBFile(data.outb, host, port, sock)
                 if data.outb.decode() == "key":
                     type = "key"
-
-            sent = sock.send(data.outb)
-            data.outb = data.outb[sent:]
+            if data.outb.decode() != "fileCBC" and data.outb.decode() != "fileECB":
+                sent = sock.send(data.outb)
+                data.outb = data.outb[sent:]
 
 
 def serverStart(host, port):
     lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     lsock.bind((host, port))
     lsock.listen()
-    print(f"Listening on {(host, port)}")
+    print(f"[+] Listening on {(host, port)}")
     lsock.setblocking(False)
     sel.register(lsock, selectors.EVENT_READ, data=None)
 
@@ -136,8 +195,120 @@ def serverStart(host, port):
                 if key.data is None:
                     accept_wrapper(key.fileobj)
                 else:
-                    service_connection(key, mask)
+                    service_connection(key, mask, host, port, lsock, sel)
     except KeyboardInterrupt:
         print("Caught keyboard interrupt, exiting")
     finally:
         sel.close()
+
+
+def saveECBFile(data, host, port, sock):
+    print("hereECB")
+    print("\n=================\n")
+    print(data)
+    """ Creating a TCP server socket """
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((host, port))
+
+    sent = sock.send(data)
+    data = data[sent:]
+
+    server.listen()
+    print("[+] Listening...")
+
+    """ Accepting the connection from the client. """
+    conn, addr = server.accept()
+    print(conn)
+    print(addr)
+    print(f"[+] Client connected from {addr[0]}:{addr[1]}")
+
+    """ Receiving the filename and filesize from the client. """
+    data = conn.recv(1024).decode("utf-8")
+    item = data.split("__")
+    FILENAME = item[0]
+    FILESIZE = int(item[1])
+    print(FILENAME)
+    print(FILESIZE)
+
+    print("[+] Filename and filesize received from the client.")
+    conn.send("Filename and filesize received".encode("utf-8"))
+
+    """ Data transfer """
+    bar = tqdm(
+        range(FILESIZE),
+        f"Receiving {FILENAME}",
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+    )
+
+    with open(f"recv_{os.path.basename(FILENAME)}", "w") as f:
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            f.write(DecipherFileWithECB(data))
+            conn.send("Data received.".encode("utf-8"))
+
+            bar.update(len(data))
+
+    """ Closing connection. """
+    conn.close()
+    server.close()
+    print("\n=================\n")
+
+
+def saveCBCFile(data, host, port, sock):
+    print("hereCBC")
+    print("\n=================\n")
+    print(data)
+    """ Creating a TCP server socket """
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((host, port))
+
+    sent = sock.send(data)
+    data = data[sent:]
+
+    server.listen()
+    print("[+] Listening...")
+
+    """ Accepting the connection from the client. """
+    conn, addr = server.accept()
+    print(conn)
+    print(addr)
+    print(f"[+] Client connected from {addr[0]}:{addr[1]}")
+
+    """ Receiving the filename and filesize from the client. """
+    data = conn.recv(1024).decode("utf-8")
+    item = data.split("__")
+    FILENAME = item[0]
+    FILESIZE = int(item[1])
+    print(FILENAME)
+    print(FILESIZE)
+
+    print("[+] Filename and filesize received from the client.")
+    conn.send("Filename and filesize received".encode("utf-8"))
+
+    """ Data transfer """
+    bar = tqdm(
+        range(FILESIZE),
+        f"Receiving {FILENAME}",
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+    )
+
+    with open(f"recv_{os.path.basename(FILENAME)}", "w") as f:
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            f.write(DecipherFileWithCBC(data))
+            conn.send("Data received.".encode("utf-8"))
+
+            bar.update(len(data))
+
+    """ Closing connection. """
+    conn.close()
+    server.close()
+    print("\n=================\n")

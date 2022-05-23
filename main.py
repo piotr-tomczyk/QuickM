@@ -10,12 +10,14 @@ from time import sleep
 import multiprocessing
 from tkinter.filedialog import askopenfilename
 
-from client import clientFNC
+from client import clientFNC, clientFNCFile
 import serverFile
 
 
 customtkinter.set_appearance_mode("gray")
 customtkinter.set_default_color_theme("green")
+
+
 class ViewHandler:
     def __init__(self, master):
         self.master = master
@@ -39,12 +41,13 @@ class ViewHandler:
 
     def open_server(self):
         action = ServerWindow(self.open_win())
-    
+
     def open_client(self):
         action = ClientWindow(self.open_win())
 
     def open_client_file(self):
         action = ClientFileWindow(self.open_win())
+
     def open_win(self):
         new_window = customtkinter.CTkToplevel(self.master)
         new_window.geometry("852x480")
@@ -59,22 +62,25 @@ class ServerWindow:
         self.master.title("QuickM - server")
         self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.menuButtons()
+
     def menuButtons(self):
-        self.ip_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="IP:")
+        self.ip_label = customtkinter.CTkLabel(
+            master=self.master, width=120, height=25, text="IP:"
+        )
         self.ip_label.pack(pady=18)
-        self.ip_entry = customtkinter.CTkEntry(master=self.master,
-                               width=120,
-                               height=25,
-                               corner_radius=10)
-        self.ip_entry.insert(-1, '127.0.0.1')
+        self.ip_entry = customtkinter.CTkEntry(
+            master=self.master, width=120, height=25, corner_radius=10
+        )
+        self.ip_entry.insert(-1, "127.0.0.1")
         self.ip_entry.pack(pady=18)
-        self.port_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Port:")
+        self.port_label = customtkinter.CTkLabel(
+            master=self.master, width=120, height=25, text="Port:"
+        )
         self.port_label.pack()
-        self.port_entry = customtkinter.CTkEntry(master=self.master,
-                               width=120,
-                               height=25,
-                               corner_radius=10)
-        self.port_entry.insert(-1, '5000')
+        self.port_entry = customtkinter.CTkEntry(
+            master=self.master, width=120, height=25, corner_radius=10
+        )
+        self.port_entry.insert(-1, "5000")
         self.port_entry.pack(pady=18)
 
         server_button = customtkinter.CTkButton(
@@ -90,13 +96,13 @@ class ServerWindow:
                 self.ip_entry.get(),
                 int(self.port_entry.get()),
                 data,
-                "key".encode()
+                "key".encode(),
             ),
         )
         clientThread.start()
-        sleep(5)
+        sleep(10)
         clientThread.terminate()
-        
+
         serverThread = multiprocessing.Process(
             target=serverFile.serverStart,
             args=(
@@ -105,11 +111,12 @@ class ServerWindow:
             ),
         )
         serverThread.start()
-        sleep(5)
+        sleep(10)
         serverThread.terminate()
 
     def on_closing(self):
         self.oldWindow.destroy()
+
 
 class ClientWindow:
     def __init__(self, master):
@@ -120,38 +127,45 @@ class ClientWindow:
         self.menuButtons()
 
     def menuButtons(self):
-        self.ip_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="IP:")
+        self.ip_label = customtkinter.CTkLabel(
+            master=self.master, width=120, height=25, text="IP:"
+        )
         self.ip_label.pack(pady=18)
-        self.ip_entry = customtkinter.CTkEntry(master=self.master,
-                               width=120,
-                               height=25,
-                               corner_radius=10)
-        self.ip_entry.insert(-1, '127.0.0.1')
+        self.ip_entry = customtkinter.CTkEntry(
+            master=self.master, width=120, height=25, corner_radius=10
+        )
+        self.ip_entry.insert(-1, "127.0.0.1")
         self.ip_entry.pack(pady=18)
-        self.port_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Port:")
+        self.port_label = customtkinter.CTkLabel(
+            master=self.master, width=120, height=25, text="Port:"
+        )
         self.port_label.pack()
-        self.port_entry = customtkinter.CTkEntry(master=self.master,
-                               width=120,
-                               height=25,
-                               corner_radius=10)
-        self.port_entry.insert(-1, '5000')
+        self.port_entry = customtkinter.CTkEntry(
+            master=self.master, width=120, height=25, corner_radius=10
+        )
+        self.port_entry.insert(-1, "5000")
         self.port_entry.pack(pady=18)
 
-        self.message_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Message:")
+        self.message_label = customtkinter.CTkLabel(
+            master=self.master, width=120, height=25, text="Message:"
+        )
         self.message_label.pack()
-        
-        self.message_entry = customtkinter.CTkEntry(master=self.master,
-                               width=120,
-                               height=25,
-                               corner_radius=10)
+
+        self.message_entry = customtkinter.CTkEntry(
+            master=self.master, width=120, height=25, corner_radius=10
+        )
         self.message_entry.pack(pady=18)
 
         self.is_ecb = tkinter.IntVar(self.master, 0)
 
-        self.ecb_button = customtkinter.CTkRadioButton(master=self.master, text="ECB",variable= self.is_ecb, value=0);
+        self.ecb_button = customtkinter.CTkRadioButton(
+            master=self.master, text="ECB", variable=self.is_ecb, value=0
+        )
         self.ecb_button.pack()
 
-        self.ecb_button = customtkinter.CTkRadioButton(master=self.master, text="CBC",variable= self.is_ecb, value=1);
+        self.ecb_button = customtkinter.CTkRadioButton(
+            master=self.master, text="CBC", variable=self.is_ecb, value=1
+        )
         self.ecb_button.pack()
 
         self.send_button = customtkinter.CTkButton(
@@ -172,7 +186,7 @@ class ClientWindow:
             ),
         )
         serverThread.start()
-        sleep(5)
+        sleep(10)
         serverThread.terminate()
         sleep(2)
         messageType = "messageECB"
@@ -188,15 +202,16 @@ class ClientWindow:
                 self.ip_entry.get(),
                 int(self.port_entry.get()),
                 data,
-                messageType.encode()
+                messageType.encode(),
             ),
         )
         clientThread.start()
-        sleep(5)
+        sleep(10)
         clientThread.terminate()
-        
+
     def on_closing(self):
         self.oldWindow.destroy()
+
 
 class ClientFileWindow:
     def __init__(self, master):
@@ -207,27 +222,33 @@ class ClientFileWindow:
         self.menuButtons()
 
     def menuButtons(self):
-        self.ip_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="IP:")
+        self.ip_label = customtkinter.CTkLabel(
+            master=self.master, width=120, height=25, text="IP:"
+        )
         self.ip_label.pack(pady=18)
-        self.ip_entry = customtkinter.CTkEntry(master=self.master,
-                               width=120,
-                               height=25,
-                               corner_radius=10)
-        self.ip_entry.insert(-1, '127.0.0.1')
+        self.ip_entry = customtkinter.CTkEntry(
+            master=self.master, width=120, height=25, corner_radius=10
+        )
+        self.ip_entry.insert(-1, "127.0.0.1")
         self.ip_entry.pack(pady=18)
-        self.port_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Port:")
+        self.port_label = customtkinter.CTkLabel(
+            master=self.master, width=120, height=25, text="Port:"
+        )
         self.port_label.pack()
-        self.port_entry = customtkinter.CTkEntry(master=self.master,
-                               width=120,
-                               height=25,
-                               corner_radius=10)
-        self.port_entry.insert(-1, '5000')                       
+        self.port_entry = customtkinter.CTkEntry(
+            master=self.master, width=120, height=25, corner_radius=10
+        )
+        self.port_entry.insert(-1, "5000")
         self.port_entry.pack(pady=18)
 
-        self.message_label_1 = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="Plik:")
+        self.message_label_1 = customtkinter.CTkLabel(
+            master=self.master, width=120, height=25, text="Plik:"
+        )
         self.message_label_1.pack()
-        
-        self.message_label_2 = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="WYBÓR PLIKU")
+
+        self.message_label_2 = customtkinter.CTkLabel(
+            master=self.master, width=120, height=25, text="WYBÓR PLIKU"
+        )
         self.message_label_2.pack()
 
         self.filename = ""
@@ -237,15 +258,24 @@ class ClientFileWindow:
         )
         self.choose_button.pack(pady=18)
 
-        self.message_file_label = customtkinter.CTkLabel(master=self.master,width=120,height=25,text="WYBRANY PLIK: " + self.filename)
+        self.message_file_label = customtkinter.CTkLabel(
+            master=self.master,
+            width=120,
+            height=25,
+            text="WYBRANY PLIK: " + self.filename,
+        )
         self.message_file_label.pack()
 
         self.is_ecb = tkinter.IntVar(self.master, 0)
 
-        self.ecb_button = customtkinter.CTkRadioButton(master=self.master, text="ECB",variable= self.is_ecb, value=0);
+        self.ecb_button = customtkinter.CTkRadioButton(
+            master=self.master, text="ECB", variable=self.is_ecb, value=0
+        )
         self.ecb_button.pack()
 
-        self.ecb_button = customtkinter.CTkRadioButton(master=self.master, text="CBC",variable= self.is_ecb, value=1);
+        self.ecb_button = customtkinter.CTkRadioButton(
+            master=self.master, text="CBC", variable=self.is_ecb, value=1
+        )
         self.ecb_button.pack()
 
         self.send_button = customtkinter.CTkButton(
@@ -266,37 +296,40 @@ class ClientFileWindow:
             ),
         )
         serverThread.start()
-        sleep(5)
+        sleep(10)
         serverThread.terminate()
         sleep(2)
         messageType = "fileECB"
         if self.is_ecb.get() == 0:
-            data = CipherMessageWithECB(self.filename)
             messageType = "fileECB"
         if self.is_ecb.get() == 1:
-            data = CipherMessageWithCBC(self.filename)
             messageType = "fileCBC"
+        data = self.filename
+        fileSize = os.path.getsize(self.filename)
         clientThread = multiprocessing.Process(
-            target=clientFNC,
+            target=clientFNCFile,
             args=(
                 self.ip_entry.get(),
                 int(self.port_entry.get()),
                 data,
-                messageType.encode()
+                messageType,
+                fileSize,
+                self.filename,
             ),
         )
         clientThread.start()
-        sleep(5)
+        sleep(10)
         clientThread.terminate()
-    
+
     def chooseFile(self):
         self.filename = askopenfilename()
         print(self.filename)
-        self.message_file_label["text"] = "WYBRANY PLIK: "+ self.filename
-        return 
+        self.message_file_label["text"] = "WYBRANY PLIK: " + self.filename
+        return
 
     def on_closing(self):
         self.oldWindow.destroy()
+
 
 def GenerateRSAKeys():
 
@@ -314,11 +347,13 @@ def GenerateRSAKeys():
     file_out.write(public_key)
     file_out.close()
 
+
 def GetPublicKey():
     return str(open("RSApub/public.pem").read()).encode()
 
+
 def CipherMessageWithECB(data):
-    data = pad(data.encode(), AES.block_size)
+    data = pad(repr(data).encode(), AES.block_size)
     file_out = open("encrypted_data.bin", "wb")
 
     recipient_key = RSA.import_key(open("public_rec.pem").read())
@@ -333,12 +368,13 @@ def CipherMessageWithECB(data):
     text = enc_session_key + ciphertext
     [file_out.write(x) for x in (enc_session_key, ciphertext)]
     file_out.close()
-    
+
     return text
 
+
 def CipherMessageWithCBC(data):
-    #CBC CODE
-    data = pad(data.encode(), AES.block_size)
+    # CBC CODE
+    data = pad(repr(data).encode(), AES.block_size)
     file_out = open("encrypted_data.bin", "wb")
 
     recipient_key = RSA.import_key(open("public_rec.pem").read())
@@ -353,11 +389,12 @@ def CipherMessageWithCBC(data):
     text = enc_session_key + ciphertext
     [file_out.write(x) for x in (enc_session_key, ciphertext)]
     file_out.close()
-    
+
     return text
 
+
 def main():
-    if not(os.path.exists('RSApriv')):
+    if not (os.path.exists("RSApriv")):
         GenerateRSAKeys()
     root = customtkinter.CTk()
     root.geometry("852x480")
