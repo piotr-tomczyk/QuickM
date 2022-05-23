@@ -63,7 +63,7 @@ def DecipherMessageWithCBC(data):
     cipher_rsa = PKCS1_OAEP.new(private_key)
     session_key = cipher_rsa.decrypt(enc_session_key)
 
-    cipher_aes = AES.new(session_key, AES.MODE_ECB)
+    cipher_aes = AES.new(session_key[0:16], AES.MODE_CBC, session_key[16:32])
     data = cipher_aes.decrypt(ciphertext)
     message = unpad(data, AES.block_size).decode()
     print(message)

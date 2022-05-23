@@ -339,12 +339,12 @@ def CipherMessageWithCBC(data):
     file_out = open("encrypted_data.bin", "wb")
 
     recipient_key = RSA.import_key(open("public_rec.pem").read())
-    session_key = get_random_bytes(16)
+    session_key = get_random_bytes(32)
 
     cipher_rsa = PKCS1_OAEP.new(recipient_key)
     enc_session_key = cipher_rsa.encrypt(session_key)
 
-    cipher_aes = AES.new(session_key, AES.MODE_ECB)
+    cipher_aes = AES.new(session_key[0:16], AES.MODE_CBC, session_key[16:32])
     ciphertext = cipher_aes.encrypt(data)
 
     text = enc_session_key + ciphertext
