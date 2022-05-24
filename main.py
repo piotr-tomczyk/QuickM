@@ -100,7 +100,7 @@ class ServerWindow:
             ),
         )
         clientThread.start()
-        sleep(10)
+        sleep(5)
         clientThread.terminate()
 
         serverThread = multiprocessing.Process(
@@ -111,7 +111,7 @@ class ServerWindow:
             ),
         )
         serverThread.start()
-        sleep(10)
+        sleep(20)
         serverThread.terminate()
 
     def on_closing(self):
@@ -186,9 +186,9 @@ class ClientWindow:
             ),
         )
         serverThread.start()
-        sleep(10)
+        sleep(5)
         serverThread.terminate()
-        sleep(2)
+        sleep(4)
         messageType = "messageECB"
         if self.is_ecb.get() == 0:
             data = CipherMessageWithECB(self.message_entry.get())
@@ -206,7 +206,7 @@ class ClientWindow:
             ),
         )
         clientThread.start()
-        sleep(10)
+        sleep(20)
         clientThread.terminate()
 
     def on_closing(self):
@@ -296,9 +296,9 @@ class ClientFileWindow:
             ),
         )
         serverThread.start()
-        sleep(10)
+        sleep(5)
         serverThread.terminate()
-        sleep(2)
+        sleep(4)
         messageType = "fileECB"
         if self.is_ecb.get() == 0:
             messageType = "fileECB"
@@ -318,7 +318,7 @@ class ClientFileWindow:
             ),
         )
         clientThread.start()
-        sleep(10)
+        sleep(20)
         clientThread.terminate()
 
     def chooseFile(self):

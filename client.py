@@ -1,6 +1,7 @@
 from encodings import utf_8
 import socket
 import os
+import time
 from tqdm import tqdm
 from tkinter import *
 import tkinter
@@ -49,6 +50,7 @@ def clientFNCFile(host, port, fileName, type, fileSize, fileNameNotCoded):
         data = f"{fileName}__{fileSize}"
         s.send(data.encode("utf-8"))
         print(f"file name and file size have been sent")
+        print("sleeper")
         # transfer !!!
         bar = tqdm(
             range(os.path.getsize(fileNameNotCoded)),
@@ -57,14 +59,16 @@ def clientFNCFile(host, port, fileName, type, fileSize, fileNameNotCoded):
             unit_scale=True,
             unit_divisor=SIZE,
         )
-
-        with open(fileNameNotCoded, "r") as f:
-            while True:
+        with open(fileNameNotCoded, "rb") as f:
+            tempVar = True
+            while tempVar:
                 data = f.read(SIZE)
-
+                print(data)
                 if not data:
                     break
-
+                print(len(data))
+                if len(data) < SIZE - 1:
+                    tempVar = False
                 if type == "fileCBC":
                     s.send(CipherMessageWithCBC(data))
                 else:
@@ -78,7 +82,7 @@ def clientFNCFile(host, port, fileName, type, fileSize, fileNameNotCoded):
 
 
 def CipherMessageWithECB(data):
-    data = pad(data.encode(), AES.block_size)
+    data = pad(data, AES.block_size)
     file_out = open("encrypted_data.bin", "wb")
 
     recipient_key = RSA.import_key(open("public_rec.pem").read())

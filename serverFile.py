@@ -1,12 +1,15 @@
 import socket
 import selectors
+import time
 import types
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES, PKCS1_OAEP
 import os
-from Crypto.Util.Padding import unpad
+from Crypto.Util.Padding import unpad, pad
 import messagePopUp
 from tqdm import tqdm
+import ast
+from secrets import token_bytes
 
 sel = selectors.DefaultSelector()
 
@@ -74,14 +77,15 @@ def DecipherMessageWithCBC(data):
     return
 
 
-def DecipherFileWithECB(data):
+def DecipherFileWithECB(data, tempFilesize):
     print("ECB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     file_out = open("encrypted_data.bin", "wb")
     file_out.write(data)
     file_out.close()
     file_in = open("encrypted_data.bin", "rb")
-
     private_key = RSA.import_key(open("RSApriv/private.pem").read())
+
+    print("KEY SIZEEEEEEEEEEEEEE " + str(private_key.size_in_bytes()))
 
     enc_session_key, ciphertext = [
         file_in.read(x) for x in (private_key.size_in_bytes(), -1)
@@ -90,13 +94,31 @@ def DecipherFileWithECB(data):
     file_in.close()
     os.remove("encrypted_data.bin")
 
-    cipher_rsa = PKCS1_OAEP.new(private_key)
-    session_key = cipher_rsa.decrypt(enc_session_key)
+    if tempFilesize > 1023:
+        cipher_rsa = PKCS1_OAEP.new(private_key)
+        session_key = cipher_rsa.decrypt(enc_session_key)
 
-    cipher_aes = AES.new(session_key, AES.MODE_ECB)
-    data = cipher_aes.decrypt(ciphertext)
-    # AES.block_size
-    message = unpad(data, AES.block_size).decode()
+        cipher_aes = AES.new(session_key, AES.MODE_ECB)
+        print("\n")
+        data = cipher_aes.decrypt(ciphertext)
+        # AES.block_size
+        print("\nfilesize :: " + str(tempFilesize) + "\n")
+        message = data[:1024]
+        print(message)
+    else:
+        # FIX NEEDED ################################################### FIX FIX FIX
+        cipher_rsa = PKCS1_OAEP.new(private_key)
+        try:
+            session_key = cipher_rsa.decrypt(enc_session_key)
+            cipher_aes = AES.new(session_key, AES.MODE_ECB)
+            data = cipher_aes.decrypt(ciphertext)
+        except:
+            data = token_bytes(64)
+        print("\nfilesize :: " + str(tempFilesize) + "\n")
+        message = data[: tempFilesize % 1024]
+
+        print("\n=============================================\n")
+        print(message)
 
     return message
 
@@ -231,8 +253,7 @@ def saveECBFile(data, host, port, sock):
     print(FILESIZE)
 
     print("[+] Filename and filesize received from the client.")
-    conn.send("Filename and filesize received".encode("utf-8"))
-
+    print("sleeper")
     """ Data transfer """
     bar = tqdm(
         range(FILESIZE),
@@ -242,15 +263,21 @@ def saveECBFile(data, host, port, sock):
         unit_divisor=1024,
     )
 
-    with open(f"recv_{os.path.basename(FILENAME)}", "w") as f:
-        while True:
+    tempFilesize = FILESIZE + 1024
+    with open(f"recv_{os.path.basename(FILENAME)}", "wb") as f:
+        tempVar = True
+        while tempVar:
+            tempFilesize -= 1024
+            if tempFilesize < 0:
+                break
             data = conn.recv(1024)
             if not data:
                 break
-            f.write(DecipherFileWithECB(data))
+            tempText = DecipherFileWithECB(data, tempFilesize)
+            f.write(tempText)
             conn.send("Data received.".encode("utf-8"))
-
-            bar.update(len(data))
+            print(len(tempText))
+            bar.update(1024)
 
     """ Closing connection. """
     conn.close()
@@ -298,7 +325,7 @@ def saveCBCFile(data, host, port, sock):
         unit_divisor=1024,
     )
 
-    with open(f"recv_{os.path.basename(FILENAME)}", "w") as f:
+    with open(f"recv_{os.path.basename(FILENAME)}", "wb") as f:
         while True:
             data = conn.recv(1024)
             if not data:
