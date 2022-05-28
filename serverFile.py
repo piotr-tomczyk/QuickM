@@ -23,7 +23,6 @@ def GetPublicKey(data):
 
 
 def DecipherMessageWithECB(data):
-    print("ECB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     file_out = open("encrypted_data.bin", "wb")
     file_out.write(data)
     file_out.close()
@@ -44,14 +43,12 @@ def DecipherMessageWithECB(data):
     cipher_aes = AES.new(session_key, AES.MODE_ECB)
     data = cipher_aes.decrypt(ciphertext)
     message = unpad(data, AES.block_size).decode()
-    print(message)
     messagePopUp.start(message)
     return
 
 
 def DecipherMessageWithCBC(data):
     ##CBC implementation
-    print("CBC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     file_out = open("encrypted_data.bin", "wb")
     file_out.write(data)
     file_out.close()
@@ -72,80 +69,54 @@ def DecipherMessageWithCBC(data):
     cipher_aes = AES.new(session_key[0:16], AES.MODE_CBC, session_key[16:32])
     data = cipher_aes.decrypt(ciphertext)
     message = unpad(data, AES.block_size).decode()
-    print(message)
     messagePopUp.start(message)
     return
 
 
-def DecipherFileWithECB(data, tempFilesize):
-    print("ECB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    file_out = open("encrypted_data.bin", "wb")
+def DecipherFileWithECB(data):
+    file_out = open("encrypted_data1.bin", "wb")
     file_out.write(data)
     file_out.close()
-    file_in = open("encrypted_data.bin", "rb")
+    file_in = open("encrypted_data1.bin", "rb")
     private_key = RSA.import_key(open("RSApriv/private.pem").read())
-
-    print("KEY SIZEEEEEEEEEEEEEE " + str(private_key.size_in_bytes()))
-
     enc_session_key, ciphertext = [
         file_in.read(x) for x in (private_key.size_in_bytes(), -1)
     ]
 
     file_in.close()
-    os.remove("encrypted_data.bin")
+    os.remove("encrypted_data1.bin")
 
-    if tempFilesize > 1023:
-        cipher_rsa = PKCS1_OAEP.new(private_key)
-        session_key = cipher_rsa.decrypt(enc_session_key)
+    cipher_rsa = PKCS1_OAEP.new(private_key)
+    session_key = cipher_rsa.decrypt(enc_session_key)
 
-        cipher_aes = AES.new(session_key, AES.MODE_ECB)
-        print("\n")
-        data = cipher_aes.decrypt(ciphertext)
-        # AES.block_size
-        print("\nfilesize :: " + str(tempFilesize) + "\n")
-        message = data[:1024]
-        print(message)
-    else:
-        # FIX NEEDED ################################################### FIX FIX FIX
-        cipher_rsa = PKCS1_OAEP.new(private_key)
-        try:
-            session_key = cipher_rsa.decrypt(enc_session_key)
-            cipher_aes = AES.new(session_key, AES.MODE_ECB)
-            data = cipher_aes.decrypt(ciphertext)
-        except:
-            data = token_bytes(64)
-        print("\nfilesize :: " + str(tempFilesize) + "\n")
-        message = data[: tempFilesize % 1024]
-
-        print("\n=============================================\n")
-        print(message)
+    cipher_aes = AES.new(session_key, AES.MODE_ECB)
+    data = cipher_aes.decrypt(ciphertext)
+    # AES.block_size
+    message = data[:1024]
 
     return message
 
 
 def DecipherFileWithCBC(data):
-    ##CBC implementation
-    print("CBC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    file_out = open("encrypted_data.bin", "wb")
+    file_out = open("encrypted_data1.bin", "wb")
     file_out.write(data)
     file_out.close()
-    file_in = open("encrypted_data.bin", "rb")
-
+    file_in = open("encrypted_data1.bin", "rb")
     private_key = RSA.import_key(open("RSApriv/private.pem").read())
-
     enc_session_key, ciphertext = [
         file_in.read(x) for x in (private_key.size_in_bytes(), -1)
     ]
 
     file_in.close()
-    os.remove("encrypted_data.bin")
+    os.remove("encrypted_data1.bin")
 
     cipher_rsa = PKCS1_OAEP.new(private_key)
     session_key = cipher_rsa.decrypt(enc_session_key)
 
     cipher_aes = AES.new(session_key[0:16], AES.MODE_CBC, session_key[16:32])
     data = cipher_aes.decrypt(ciphertext)
-    message = unpad(data, AES.block_size).decode()
+    # AES.block_size
+    message = data[:1024]
 
     return message
 
@@ -177,9 +148,9 @@ def service_connection(key, mask, host, port, lsock, sel):
             if type == "key":
                 GetPublicKey(data.outb)
             if type == "messageECB":
-                DecipherMessageWithECB(data)
+                DecipherMessageWithECB(data.outb)
             if type == "messageCBC":
-                DecipherMessageWithCBC(data)
+                DecipherMessageWithCBC(data.outb)
             if type == "":
                 if data.outb.decode() == "messageCBC":
                     type = "messageCBC"
@@ -262,24 +233,23 @@ def saveECBFile(data, host, port, sock):
         unit_scale=True,
         unit_divisor=1024,
     )
-
-    tempFilesize = FILESIZE + 1024
     with open(f"recv_{os.path.basename(FILENAME)}", "wb") as f:
         tempVar = True
         while tempVar:
-            tempFilesize -= 1024
-            if tempFilesize < 0:
-                break
-            data = conn.recv(1024)
+            # if tempFilesize < 0:
+            #    break
+            data = conn.recv(1296)
             if not data:
                 break
-            tempText = DecipherFileWithECB(data, tempFilesize)
+            tempText = DecipherFileWithECB(data)
             f.write(tempText)
+            # f.write(data)
             conn.send("Data received.".encode("utf-8"))
-            print(len(tempText))
+            # print(len(tempText))
             bar.update(1024)
 
     """ Closing connection. """
+    time.sleep(5)
     conn.close()
     server.close()
     print("\n=================\n")
@@ -314,8 +284,7 @@ def saveCBCFile(data, host, port, sock):
     print(FILESIZE)
 
     print("[+] Filename and filesize received from the client.")
-    conn.send("Filename and filesize received".encode("utf-8"))
-
+    print("sleeper")
     """ Data transfer """
     bar = tqdm(
         range(FILESIZE),
@@ -324,18 +293,23 @@ def saveCBCFile(data, host, port, sock):
         unit_scale=True,
         unit_divisor=1024,
     )
-
     with open(f"recv_{os.path.basename(FILENAME)}", "wb") as f:
-        while True:
-            data = conn.recv(1024)
+        tempVar = True
+        while tempVar:
+            # if tempFilesize < 0:
+            #    break
+            data = conn.recv(1296)
             if not data:
                 break
-            f.write(DecipherFileWithCBC(data))
+            tempText = DecipherFileWithCBC(data)
+            f.write(tempText)
+            # f.write(data)
             conn.send("Data received.".encode("utf-8"))
-
-            bar.update(len(data))
+            # print(len(tempText))
+            bar.update(1024)
 
     """ Closing connection. """
+    time.sleep(5)
     conn.close()
     server.close()
     print("\n=================\n")

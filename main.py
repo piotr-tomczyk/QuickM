@@ -111,7 +111,7 @@ class ServerWindow:
             ),
         )
         serverThread.start()
-        sleep(20)
+        sleep(60)
         serverThread.terminate()
 
     def on_closing(self):
@@ -318,7 +318,7 @@ class ClientFileWindow:
             ),
         )
         clientThread.start()
-        sleep(20)
+        sleep(60)
         clientThread.terminate()
 
     def chooseFile(self):

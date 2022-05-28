@@ -63,17 +63,16 @@ def clientFNCFile(host, port, fileName, type, fileSize, fileNameNotCoded):
             tempVar = True
             while tempVar:
                 data = f.read(SIZE)
-                print(data)
                 if not data:
                     break
-                print(len(data))
                 if len(data) < SIZE - 1:
                     tempVar = False
                 if type == "fileCBC":
+                    print(len(CipherMessageWithCBC(data)))
                     s.send(CipherMessageWithCBC(data))
                 else:
+                    # print(len(CipherMessageWithECB(data)))
                     s.send(CipherMessageWithECB(data))
-
                 msg = s.recv(SIZE).decode("utf-8")
                 bar.update(len(data))
         # close connection
@@ -83,7 +82,6 @@ def clientFNCFile(host, port, fileName, type, fileSize, fileNameNotCoded):
 
 def CipherMessageWithECB(data):
     data = pad(data, AES.block_size)
-    file_out = open("encrypted_data.bin", "wb")
 
     recipient_key = RSA.import_key(open("public_rec.pem").read())
     session_key = get_random_bytes(16)
@@ -95,17 +93,13 @@ def CipherMessageWithECB(data):
     ciphertext = cipher_aes.encrypt(data)
 
     text = enc_session_key + ciphertext
-    [file_out.write(x) for x in (enc_session_key, ciphertext)]
-    file_out.close()
 
     return text
 
 
 def CipherMessageWithCBC(data):
     # CBC CODE
-    data = pad(data.encode(), AES.block_size)
-    file_out = open("encrypted_data.bin", "wb")
-
+    data = pad(data, AES.block_size)
     recipient_key = RSA.import_key(open("public_rec.pem").read())
     session_key = get_random_bytes(32)
 
@@ -116,7 +110,5 @@ def CipherMessageWithCBC(data):
     ciphertext = cipher_aes.encrypt(data)
 
     text = enc_session_key + ciphertext
-    [file_out.write(x) for x in (enc_session_key, ciphertext)]
-    file_out.close()
 
     return text
