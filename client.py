@@ -42,7 +42,7 @@ def clientFNCFile(host, port, fileName, type, fileSize, fileNameNotCoded):
     print(f"sent data type {data}")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         # Const
-        SIZE = 1024
+        SIZE = 1024 * 8
         # connect
         s.connect((host, port))
 

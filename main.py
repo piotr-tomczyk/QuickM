@@ -17,6 +17,8 @@ import serverFile
 customtkinter.set_appearance_mode("gray")
 customtkinter.set_default_color_theme("green")
 
+fileSize = 0
+
 
 class ViewHandler:
     def __init__(self, master):
@@ -111,8 +113,8 @@ class ServerWindow:
             ),
         )
         serverThread.start()
-        sleep(60)
-        serverThread.terminate()
+        # sleep(50)
+        # serverThread.terminate()
 
     def on_closing(self):
         self.oldWindow.destroy()
@@ -206,8 +208,6 @@ class ClientWindow:
             ),
         )
         clientThread.start()
-        sleep(20)
-        clientThread.terminate()
 
     def on_closing(self):
         self.oldWindow.destroy()
@@ -284,6 +284,7 @@ class ClientFileWindow:
         self.send_button.pack(pady=18)
 
     def clientInit(self):
+        global fileSize
         if self.is_ecb.get() == 0:
             print("selected ECB")
         if self.is_ecb.get() == 1:
@@ -318,8 +319,9 @@ class ClientFileWindow:
             ),
         )
         clientThread.start()
-        sleep(60)
-        clientThread.terminate()
+        # print(fileSize / (1024 * 150) * 10)
+        # sleep(fileSize / (1024 * 150) * 10)
+        # clientThread.terminate()
 
     def chooseFile(self):
         self.filename = askopenfilename()

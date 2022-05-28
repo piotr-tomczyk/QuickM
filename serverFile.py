@@ -92,7 +92,7 @@ def DecipherFileWithECB(data):
     cipher_aes = AES.new(session_key, AES.MODE_ECB)
     data = cipher_aes.decrypt(ciphertext)
     # AES.block_size
-    message = data[:1024]
+    message = data[: (1024 * 8)]
 
     return message
 
@@ -116,7 +116,7 @@ def DecipherFileWithCBC(data):
     cipher_aes = AES.new(session_key[0:16], AES.MODE_CBC, session_key[16:32])
     data = cipher_aes.decrypt(ciphertext)
     # AES.block_size
-    message = data[:1024]
+    message = data[: (1024 * 8)]
 
     return message
 
@@ -149,8 +149,12 @@ def service_connection(key, mask, host, port, lsock, sel):
                 GetPublicKey(data.outb)
             if type == "messageECB":
                 DecipherMessageWithECB(data.outb)
+                lsock.close()
+                sel.close()
             if type == "messageCBC":
                 DecipherMessageWithCBC(data.outb)
+                lsock.close()
+                sel.close()
             if type == "":
                 if data.outb.decode() == "messageCBC":
                     type = "messageCBC"
@@ -231,14 +235,14 @@ def saveECBFile(data, host, port, sock):
         f"Receiving {FILENAME}",
         unit="B",
         unit_scale=True,
-        unit_divisor=1024,
+        unit_divisor=1024 * 8,
     )
     with open(f"recv_{os.path.basename(FILENAME)}", "wb") as f:
         tempVar = True
         while tempVar:
             # if tempFilesize < 0:
             #    break
-            data = conn.recv(1296)
+            data = conn.recv(1296 + (1024 * 8))
             if not data:
                 break
             tempText = DecipherFileWithECB(data)
@@ -246,7 +250,7 @@ def saveECBFile(data, host, port, sock):
             # f.write(data)
             conn.send("Data received.".encode("utf-8"))
             # print(len(tempText))
-            bar.update(1024)
+            bar.update(1024 * 8)
 
     """ Closing connection. """
     time.sleep(5)
@@ -291,14 +295,14 @@ def saveCBCFile(data, host, port, sock):
         f"Receiving {FILENAME}",
         unit="B",
         unit_scale=True,
-        unit_divisor=1024,
+        unit_divisor=1024 * 8,
     )
     with open(f"recv_{os.path.basename(FILENAME)}", "wb") as f:
         tempVar = True
         while tempVar:
             # if tempFilesize < 0:
             #    break
-            data = conn.recv(1296)
+            data = conn.recv(1296 + (7 * 1024))
             if not data:
                 break
             tempText = DecipherFileWithCBC(data)
@@ -306,7 +310,7 @@ def saveCBCFile(data, host, port, sock):
             # f.write(data)
             conn.send("Data received.".encode("utf-8"))
             # print(len(tempText))
-            bar.update(1024)
+            bar.update(1024 * 8)
 
     """ Closing connection. """
     time.sleep(5)
