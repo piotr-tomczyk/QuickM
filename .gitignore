@@ -1,5 +1,6 @@
 RSApriv/
 RSApub/
+recv/
 __pycache__/
 public_rec.pem
 encrypted_data.bin

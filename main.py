@@ -1,10 +1,6 @@
 from tkinter import *
 import tkinter
-from Crypto.PublicKey import RSA
-from Crypto.Random import get_random_bytes
-from Crypto.Cipher import AES, PKCS1_OAEP
 import os
-from Crypto.Util.Padding import pad
 import customtkinter
 from time import sleep
 import multiprocessing
@@ -13,6 +9,7 @@ from tkinter.filedialog import askopenfilename
 from client import clientFNC, clientFNCFile
 import serverFile
 
+from cipher import CipherMethods
 
 customtkinter.set_appearance_mode("gray")
 customtkinter.set_default_color_theme("green")
@@ -176,10 +173,6 @@ class ClientWindow:
         self.send_button.pack(pady=18)
 
     def clientInit(self):
-        if self.is_ecb.get() == 0:
-            print("selected ECB")
-        if self.is_ecb.get() == 1:
-            print("selected: CBC")
         serverThread = multiprocessing.Process(
             target=serverFile.serverStart,
             args=(
@@ -193,10 +186,10 @@ class ClientWindow:
         sleep(4)
         messageType = "messageECB"
         if self.is_ecb.get() == 0:
-            data = CipherMessageWithECB(self.message_entry.get())
+            data = CipherMethods.CipherMessage(repr(self.message_entry.get()).encode(), "ecb")
             messageType = "messageECB"
         if self.is_ecb.get() == 1:
-            data = CipherMessageWithCBC(self.message_entry.get())
+            data = CipherMethods.CipherMessage(repr(self.message_entry.get()).encode(), "cbc")
             messageType = "messageCBC"
         clientThread = multiprocessing.Process(
             target=clientFNC,
@@ -285,10 +278,6 @@ class ClientFileWindow:
 
     def clientInit(self):
         global fileSize
-        if self.is_ecb.get() == 0:
-            print("selected ECB")
-        if self.is_ecb.get() == 1:
-            print("selected: CBC")
         serverThread = multiprocessing.Process(
             target=serverFile.serverStart,
             args=(
@@ -319,85 +308,23 @@ class ClientFileWindow:
             ),
         )
         clientThread.start()
-        # print(fileSize / (1024 * 150) * 10)
-        # sleep(fileSize / (1024 * 150) * 10)
-        # clientThread.terminate()
 
     def chooseFile(self):
         self.filename = askopenfilename()
-        print(self.filename)
         self.message_file_label["text"] = "WYBRANY PLIK: " + self.filename
         return
 
     def on_closing(self):
         self.oldWindow.destroy()
 
-
-def GenerateRSAKeys():
-
-    key = RSA.generate(2048)
-    private_key = key.export_key()
-    public_key = key.publickey().export_key()
-
-    os.mkdir("RSApriv")
-    file_out = open("RSApriv/private.pem", "wb")
-    file_out.write(private_key)
-    file_out.close()
-
-    os.mkdir("RSApub")
-    file_out = open("RSApub/public.pem", "wb")
-    file_out.write(public_key)
-    file_out.close()
-
-
 def GetPublicKey():
     return str(open("RSApub/public.pem").read()).encode()
 
-
-def CipherMessageWithECB(data):
-    data = pad(repr(data).encode(), AES.block_size)
-    file_out = open("encrypted_data.bin", "wb")
-
-    recipient_key = RSA.import_key(open("public_rec.pem").read())
-    session_key = get_random_bytes(16)
-
-    cipher_rsa = PKCS1_OAEP.new(recipient_key)
-    enc_session_key = cipher_rsa.encrypt(session_key)
-
-    cipher_aes = AES.new(session_key, AES.MODE_ECB)
-    ciphertext = cipher_aes.encrypt(data)
-
-    text = enc_session_key + ciphertext
-    [file_out.write(x) for x in (enc_session_key, ciphertext)]
-    file_out.close()
-
-    return text
-
-
-def CipherMessageWithCBC(data):
-    # CBC CODE
-    data = pad(repr(data).encode(), AES.block_size)
-    file_out = open("encrypted_data.bin", "wb")
-
-    recipient_key = RSA.import_key(open("public_rec.pem").read())
-    session_key = get_random_bytes(32)
-
-    cipher_rsa = PKCS1_OAEP.new(recipient_key)
-    enc_session_key = cipher_rsa.encrypt(session_key)
-
-    cipher_aes = AES.new(session_key[0:16], AES.MODE_CBC, session_key[16:32])
-    ciphertext = cipher_aes.encrypt(data)
-
-    text = enc_session_key + ciphertext
-    [file_out.write(x) for x in (enc_session_key, ciphertext)]
-    file_out.close()
-
-    return text
-
-
 def main():
     if not (os.path.exists("RSApriv")):
-        GenerateRSAKeys()
+        CipherMethods.GenerateRSAKeys()
+    if not (os.path.exists("recv")):
+        os.mkdir("recv")
     root = customtkinter.CTk()
     root.geometry("852x480")
     my_gui = ViewHandler(root)
